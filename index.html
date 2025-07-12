@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dino Game by Harshil S Khandhar</title>
+  <style>
+    canvas {
+      display: block;
+      margin: auto;
+      background: #fff;
+      border: 2px solid #000;
+    }
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dino Game by Harshil S Khandhar</h1>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Dino properties
+    const dino = {
+      x: 100,
+      y: 300,
+      width: 50,
+      height: 50,
+      vy: 0,
+      gravity: 1,
+      jumpStrength: -20,
+      isJumping: false
+    };
+
+    let obstacles = [];
+    let obstacleDelay = 1500;
+    let lastObstacleTime = 0;
+    let obstacleSpeed = 5;
+
+    let score = 0;
+    let startTime = Date.now();
+    let gameOver = false;
+
+    // Handle spacebar jump
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && !dino.isJumping && !gameOver) {
+        dino.vy = dino.jumpStrength;
+        dino.isJumping = true;
+      } else if (gameOver && e.code === "Space") {
+        restartGame();
+      }
+    });
+
+    function update(deltaTime) {
+      // Apply gravity
+      dino.vy += dino.gravity;
+      dino.y += dino.vy;
+
+      if (dino.y >= 300) {
+        dino.y = 300;
+        dino.vy = 0;
+        dino.isJumping = false;
+      }
+
+      // Generate obstacles
+      if (Date.now() - lastObstacleTime > obstacleDelay) {
+        obstacles.push({ x: canvas.width, y: 320, width: 20, height: 50 });
+        lastObstacleTime = Date.now();
+      }
+
+      // Move and remove obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= obstacleSpeed;
+
+        // Collision detection
+        if (
+          dino.x < obstacles[i].x + obstacles[i].width &&
+          dino.x + dino.width > obstacles[i].x &&
+          dino.y < obstacles[i].y + obstacles[i].height &&
+          dino.y + dino.height > obstacles[i].y
+        ) {
+          gameOver = true;
+        }
+
+        if (obstacles[i].x + obstacles[i].width < 0) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      // Update score
+      if (!gameOver) {
+        score = Math.floor((Date.now() - startTime) / 100);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw dino
+      ctx.fillStyle = "black";
+      ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+
+      // Draw ground
+      ctx.beginPath();
+      ctx.moveTo(0, 350);
+      ctx.lineTo(canvas.width, 350);
+      ctx.stroke();
+
+      // Draw obstacles
+      for (const obs of obstacles) {
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      }
+
+      // Draw score
+      ctx.font = "20px Arial";
+      ctx.fillText(`Score: ${score}`, 10, 30);
+
+      // Game over message
+      if (gameOver) {
+        ctx.fillStyle = "red";
+        ctx.font = "30px Arial";
+        ctx.fillText("Game Over! Press Space to Restart", 200, 200);
+      }
+    }
+
+    function loop(timestamp) {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function restartGame() {
+      obstacles = [];
+      score = 0;
+      dino.y = 300;
+      dino.vy = 0;
+      dino.isJumping = false;
+      startTime = Date.now();
+      gameOver = false;
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
